@@ -735,4 +735,260 @@ class PersistenceIntegrationTest {
             rescueCaseRepository.flush();
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
+    @Test
+    void shouldPersistIntegratorScenarioAndResolveQueries() {
+
+        // ---------------------------------------------------------
+        // Centro
+        // ---------------------------------------------------------
+
+        RescueCenter center = new RescueCenter(
+                "DB-CAR",
+                "DeepBlue Caribbean",
+                "Santa Marta"
+        );
+
+        rescueCenterRepository.save(center);
+
+        // ---------------------------------------------------------
+        // Caso de rescate
+        // ---------------------------------------------------------
+
+        RescueCase rescueCase = new RescueCase(
+                "RES-2026-100",
+                LocalDate.of(2026, 8, 18),
+                "Bahía Concha",
+                RescueStatus.IN_REHABILITATION
+        );
+
+        center.addCase(rescueCase);
+
+        // ---------------------------------------------------------
+        // Animal
+        // ---------------------------------------------------------
+
+        Animal animal = new Animal(
+                "AN-2026-100",
+                "Green Sea Turtle",
+                "Chelonia mydas",
+                AnimalSex.FEMALE
+        );
+
+        rescueCase.assignAnimal(animal);
+
+        // ---------------------------------------------------------
+        // Expediente médico
+        // ---------------------------------------------------------
+
+        MedicalRecord medicalRecord = new MedicalRecord(
+                new BigDecimal("27.80"),
+                "STABLE",
+                "Injury caused by fishing net",
+                "Possible plastic ingestion"
+        );
+
+        animal.assignMedicalRecord(medicalRecord);
+
+        rescueCaseRepository.save(rescueCase);
+        rescueCaseRepository.flush();
+
+        // ---------------------------------------------------------
+        // Expertise existentes desde V2
+        // ---------------------------------------------------------
+
+        Expertise marineReptiles =
+                expertiseRepository
+                        .findByNameIgnoreCase("Marine Reptiles")
+                        .orElseThrow();
+
+        Expertise trauma =
+                expertiseRepository
+                        .findByNameIgnoreCase("Trauma")
+                        .orElseThrow();
+
+        Expertise rehabilitation =
+                expertiseRepository
+                        .findByNameIgnoreCase("Rehabilitation")
+                        .orElseThrow();
+
+        // ---------------------------------------------------------
+        // Especialista
+        // ---------------------------------------------------------
+
+        Specialist elena = new Specialist(
+                "SPEC-001",
+                "Elena",
+                "Vargas",
+                "elena@deepblue.org",
+                true
+        );
+
+        elena.addExpertise(marineReptiles);
+        elena.addExpertise(trauma);
+        elena.addExpertise(rehabilitation);
+
+        specialistRepository.saveAndFlush(elena);
+
+        // ---------------------------------------------------------
+        // Tratamientos
+        // ---------------------------------------------------------
+
+        Treatment woundCare = new Treatment(
+                animal,
+                elena,
+                LocalDateTime.of(2026, 8, 18, 10, 0),
+                TreatmentType.WOUND_CARE,
+                "Cleaning of left front flipper"
+        );
+
+        Treatment hydration = new Treatment(
+                animal,
+                elena,
+                LocalDateTime.of(2026, 8, 18, 12, 0),
+                TreatmentType.HYDRATION,
+                "Subcutaneous fluid therapy"
+        );
+
+        treatmentRepository.saveAll(
+                List.of(woundCare, hydration)
+        );
+
+        treatmentRepository.flush();
+
+        // =========================================================
+        // CONSULTA 1
+        // ¿Existe RES-2026-100?
+        // =========================================================
+
+        assertThat(
+                rescueCaseRepository
+                        .findByCaseCode("RES-2026-100")
+        ).isPresent();
+
+        // =========================================================
+        // CONSULTA 2
+        // Casos IN_REHABILITATION
+        // =========================================================
+
+        List<RescueCase> rehabilitationCases =
+                rescueCaseRepository
+                        .findByStatusOrderByRescueDateAsc(
+                                RescueStatus.IN_REHABILITATION
+                        );
+
+        assertThat(rehabilitationCases)
+                .extracting(RescueCase::getCaseCode)
+                .contains("RES-2026-100");
+
+        // =========================================================
+        // CONSULTA 3
+        // Animales del centro DB-CAR
+        // =========================================================
+
+        List<Animal> animalsByCenter =
+                animalRepository
+                        .findByRescueCaseRescueCenterCode(
+                                "DB-CAR"
+                        );
+
+        assertThat(animalsByCenter)
+                .extracting(Animal::getAnimalCode)
+                .containsExactly("AN-2026-100");
+
+        // =========================================================
+        // CONSULTA 4
+        // Nombre común contiene turtle
+        // =========================================================
+
+        List<Animal> turtles =
+                animalRepository
+                        .findByCommonNameContainingIgnoreCase(
+                                "turtle"
+                        );
+
+        assertThat(turtles)
+                .extracting(Animal::getAnimalCode)
+                .contains("AN-2026-100");
+
+        // =========================================================
+        // CONSULTA 5
+        // Especialistas con expertise Trauma
+        // =========================================================
+
+        List<Specialist> traumaSpecialists =
+                specialistRepository
+                        .findActiveByExpertise("Trauma");
+
+        assertThat(traumaSpecialists)
+                .extracting(Specialist::getProfessionalCode)
+                .contains("SPEC-001");
+
+        // =========================================================
+        // CONSULTA 6
+        // Tratamientos de AN-2026-100 en orden cronológico
+        // =========================================================
+
+        Animal savedAnimal =
+                animalRepository
+                        .findByAnimalCode("AN-2026-100")
+                        .orElseThrow();
+
+        List<Treatment> treatments =
+                treatmentRepository
+                        .findByAnimalIdOrderByPerformedAtAsc(
+                                savedAnimal.getId()
+                        );
+
+        assertThat(treatments)
+                .extracting(Treatment::getType)
+                .containsExactly(
+                        TreatmentType.WOUND_CARE,
+                        TreatmentType.HYDRATION
+                );
+
+        // =========================================================
+        // CONSULTA 7
+        // Tratamientos realizados por especialistas
+        // con expertise Rehabilitation
+        // =========================================================
+
+        List<Treatment> rehabilitationTreatments =
+                treatmentRepository
+                        .findBySpecialistExpertise(
+                                "Rehabilitation"
+                        );
+
+        assertThat(rehabilitationTreatments)
+                .hasSize(2);
+
+        // =========================================================
+        // CONSULTA 8
+        // Tratamientos entre dos fechas
+        // =========================================================
+
+        List<Treatment> treatmentsBetween =
+                treatmentRepository
+                        .findTreatmentsBetween(
+                                LocalDateTime.of(
+                                        2026, 8, 18, 0, 0
+                                ),
+                                LocalDateTime.of(
+                                        2026, 8, 18, 23, 59
+                                )
+                        );
+
+        assertThat(treatmentsBetween)
+                .hasSize(2);
+
+        List<Animal> challengeResult =
+                animalRepository
+                        .findByStatusAndTreatmentSpecialistExpertise(
+                                RescueStatus.IN_REHABILITATION,
+                                "trauma"
+                        );
+
+        assertThat(challengeResult)
+                .extracting(Animal::getAnimalCode)
+                .containsExactly("AN-2026-100");
+    }
 }
