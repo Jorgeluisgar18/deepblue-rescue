@@ -10,8 +10,12 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "animals")
@@ -49,6 +53,9 @@ public class Animal {
             fetch = FetchType.LAZY
     )
     private MedicalRecord medicalRecord;
+
+    @OneToMany(mappedBy = "animal")
+    private List<Treatment> treatments = new ArrayList<>();
 
     protected Animal() {
     }
@@ -100,5 +107,9 @@ public class Animal {
 
     public MedicalRecord getMedicalRecord() {
         return medicalRecord;
+    }
+
+    public List<Treatment> getTreatments() {
+        return treatments;
     }
 }
