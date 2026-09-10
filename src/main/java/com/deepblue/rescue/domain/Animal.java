@@ -38,6 +38,9 @@ public class Animal {
     @Column(nullable = false, length = 20)
     private AnimalSex sex;
 
+    @Column(name = "tracking_device_code", unique = true, length = 50)
+    private String trackingDeviceCode;
+
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "rescue_case_id",
@@ -99,6 +102,10 @@ public class Animal {
 
     public AnimalSex getSex() {
         return sex;
+    }
+
+    public String getTrackingDeviceCode() {
+        return trackingDeviceCode;
     }
 
     public RescueCase getRescueCase() {
