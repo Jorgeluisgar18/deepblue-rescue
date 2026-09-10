@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,6 +52,9 @@ class PersistenceIntegrationTest {
 
     @Autowired
     private TreatmentRepository treatmentRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // ---------------------------------------------------------
     // Paso 48 - Métodos heredados de JpaRepository
@@ -990,5 +995,25 @@ class PersistenceIntegrationTest {
         assertThat(challengeResult)
                 .extracting(Animal::getAnimalCode)
                 .containsExactly("AN-2026-100");
+    }
+    @Test
+    void shouldRejectInvalidForeignKey() {
+
+        assertThatThrownBy(() ->
+                jdbcTemplate.update(
+                        """
+                        INSERT INTO rescue_cases
+                        (case_code, rescue_date, rescue_location, status, rescue_center_id)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        "RES-FK-INVALID",
+                        java.sql.Date.valueOf(
+                                LocalDate.of(2026, 8, 25)
+                        ),
+                        "Test location",
+                        "ADMITTED",
+                        999999L
+                )
+        ).isInstanceOf(DataIntegrityViolationException.class);
     }
 }

@@ -3,7 +3,7 @@
 ## Descripción
 
 DeepBlue Rescue es un proyecto académico orientado al desarrollo
-of una capa de persistencia para una plataforma de rescate y
+de una capa de persistencia para una plataforma de rescate y
 rehabilitación de fauna marina.
 
 El proyecto utiliza Java 21, Spring Boot 4, Spring Data JPA,
