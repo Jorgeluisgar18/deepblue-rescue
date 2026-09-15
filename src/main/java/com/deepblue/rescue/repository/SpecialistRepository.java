@@ -1,5 +1,6 @@
 package com.deepblue.rescue.repository;
 
+import java.util.Optional;
 import com.deepblue.rescue.domain.Specialist;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,4 +22,5 @@ public interface SpecialistRepository
     List<Specialist> findActiveByExpertise(
             @Param("expertiseName") String expertiseName
     );
+    Optional<Specialist> findByProfessionalCode(String professionalCode);
 }

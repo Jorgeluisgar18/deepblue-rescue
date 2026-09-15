@@ -100,4 +100,9 @@ public class RescueCase {
     public Animal getAnimal() {
         return animal;
     }
+    public void changeStatus(
+        RescueStatus status
+) {
+    this.status = status;
+}
 }

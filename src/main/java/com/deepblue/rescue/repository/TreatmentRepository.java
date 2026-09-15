@@ -48,4 +48,7 @@ public interface TreatmentRepository
     List<Treatment> findBySpecialistExpertise(
             @Param("expertiseName") String expertiseName
     );
+    List<Treatment> findByAnimalAnimalCodeOrderByPerformedAtAsc(
+        String animalCode
+);
 }
