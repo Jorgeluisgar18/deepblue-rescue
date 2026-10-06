@@ -1,7 +1,6 @@
 package com.deepblue.rescue.dto.request;
 
 import com.deepblue.rescue.domain.TreatmentType;
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
