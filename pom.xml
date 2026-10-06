@@ -18,7 +18,7 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <name>deepblue-rescue</name>
-    <description>Laboratorio DeepBlue Rescue - Capa de servicio</description>
+    <description>DeepBlue Rescue - API para gestión de rescate y rehabilitación de fauna marina</description>
 
     <properties>
         <java.version>21</java.version>
@@ -57,6 +57,18 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
+        </dependency>
+
+        <!-- Spring Web MVC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+
+        <!-- Bean Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
         <!-- Testing: JUnit, Mockito y AssertJ -->
